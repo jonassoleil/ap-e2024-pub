@@ -116,5 +116,90 @@ tests =
               fact
               (CstInt 5)
           )
-          @?= Right (ValInt 120)
+          @?= Right (ValInt 120),
+                --
+      testCase "TryCatch Catch Fails" $
+        eval envEmpty (TryCatch (Div (CstInt 1) (CstInt 0)) (Pow (CstInt 2) (CstInt (-1))))
+          @?= Left "Negative exponent",
+      --
+      testCase "Lambda body not evaluted without application" $
+        eval
+          envEmpty
+          (Let "fun" (Lambda "x" (Div (CstInt 1) (CstInt 0))) (CstInt 42))
+          @?= Right (ValInt 42),
+      --
+      testCase "Apply Wrong Type" $
+        eval envEmpty (Apply (CstInt 1) (CstInt 2))
+          @?= Left "Expected a function: Type error if not ValFun",
+      --
+      testCase "Lambda Capture" $
+        eval
+          envEmpty
+          ( Let
+              "x"
+              (CstInt 1)
+              ( Apply
+                  (Lambda "y" (Add (Var "x") (Var "y")))
+                  (CstInt 2)
+              )
+          )
+          @?= Right (ValInt 3),
+      --
+      testCase "Lambda Multiple Capture" $
+        eval
+          envEmpty
+          ( Let
+              "a"
+              (CstInt 1)
+              ( Let
+                  "b"
+                  (CstInt 2)
+                  ( Let
+                      "c"
+                      (CstInt 3)
+                      ( Apply
+                          (Lambda "x" (Add (Add (Var "a") (Var "b")) (Var "c")))
+                          (CstInt 4)
+                      )
+                  )
+              )
+          )
+          @?= Right (ValInt 6),
+      --
+      testCase "Apply \\f -> \\ g -> \\h -> f (g h)" $
+        eval
+          envEmpty
+          ( Apply
+              ( Apply
+                  ( Apply
+                      ( Lambda "f" (Lambda "g" (Lambda "h" (Apply (Var "f") (Apply (Var "g") (Var "h")))))
+                      )
+                      (Lambda "pOne" (Add (Var "pOne") (CstInt 1)))
+                  )
+                  (Lambda "tTwo" (Mul (Var "tTwo") (CstInt 2)))
+              )
+              (CstInt 10)
+          )
+          @?= Right (ValInt 21),
+      --
+      testCase "Apply Eval Order 1 - Func" $
+        eval
+          envEmpty
+          (Apply (Add (CstInt 0) (CstInt 0)) (CstInt 1))
+          @?= Left "Expected a function: Type error if not ValFun",
+      --
+      testCase "Apply Eval Order 2 - Arg" $
+        eval
+          envEmpty
+          (Apply (Lambda "x" (Add (Var "x") (CstInt 1))) (Div (CstInt 1) (CstInt 0)))
+          @?= Left "Division by zero",
+      --
+      testCase "Apply Eval Order 3 - Body" $
+        eval
+          envEmpty
+          (Apply (Lambda "x" (Div (CstInt 1) (Var "x"))) (CstInt 0))
+          @?= Left "Division by zero",
+      --
+      testCase "[Y-Combinator] 9! = 362880" $
+        eval envEmpty (Apply fact (CstInt 9)) @?= Right (ValInt 362880)
     ]
