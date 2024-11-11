@@ -40,7 +40,6 @@ In particular:
   method `subExp` for enumerating the subexpressions of an expressions.
 * `APL.Error` is a new module defining a type of errors, which we will use
   instead of strings when reporting errors.
-* `APL.Parser` is the parser from week 3.
 * `APL.Eval` is the evaluator from week 2, modified to use the new error type.
 * `APL.Check` is the type checker from week 2, where `checkExp` is modified
   to return a *list* of possible errors.
@@ -133,8 +132,6 @@ Then run `sample (sized genExp)` in ghci.
 Extend `genExp` so that it can produce all possible expressions. Declare `Exp`
 to be an instance of `Arbitrary` with `arbitrary = sized genExp`.
 
-TODO solution
-
 ### Associativity
 
 Addition of integers obeys associativity, meaning that `(n1 + n2) + n3 == n1 + (n2 + n3)`
@@ -196,9 +193,9 @@ Implement `shrink` in the `Arbitrary` instance for `Exp` using these rules.
   shrink (Var x) =
     [Var x' | x' <- shrink x, not (null x')]
   shrink (Let x e1 e2) =
-    e1 : [Let x' e1 e2 | x' <- shrink x, not (null x')] ++ [Let x e1' e2 | e1' <- shrink e1] ++ [Let x e1 e2' | e2' <- shrink e2]
+    e1 : [Let x e1' e2 | e1' <- shrink e1] ++ [Let x e1 e2' | e2' <- shrink e2]
   shrink (Lambda x e) =
-    e : [Lambda x' e | x' <- shrink x, not (null x')] ++ [Lambda x e' | e' <- shrink e]
+    e : [Lambda x e' | e' <- shrink e]
 ```
 
 Running `quickCheck prop_aplAddAssoc` should now generate a smaller counterexample to the property.
